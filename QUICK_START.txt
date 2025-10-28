@@ -1,0 +1,70 @@
+═══════════════════════════════════════════════════════════════
+        PLACEMENT TRACKER 2025-26 - QUICK START GUIDE
+═══════════════════════════════════════════════════════════════
+
+🚀 STEP 1: Start Backend Server
+─────────────────────────────────────────────────────────────
+Double-click: start_backend.bat
+
+What happens:
+✓ Creates SQLite database automatically
+✓ Adds 31 companies from your data
+✓ Starts API server at http://localhost:8000
+
+Wait for this message: "Application startup complete"
+
+─────────────────────────────────────────────────────────────
+
+🚀 STEP 2: Start Frontend  
+─────────────────────────────────────────────────────────────
+Double-click: start_frontend.bat
+
+What happens:
+✓ Opens browser at http://localhost:3000
+✓ Shows all your placement data
+✓ Interactive statistics dashboard
+
+─────────────────────────────────────────────────────────────
+
+✅ YOU'RE DONE! The app is running!
+
+═══════════════════════════════════════════════════════════════
+
+TROUBLESHOOTING:
+═══════════════════════════════════════════════════════════════
+
+Problem: "Site can't be reached" or "localhost not reachable"
+Solution: 
+  1. Make sure backend is running first (check start_backend.bat)
+  2. Look for "placement_tracker.db" in backend folder
+  3. Backend terminal should show "Application startup complete"
+
+Problem: "Module not found" errors
+Solution:
+  - Backend: Run: cd backend && pip install -r requirements.txt
+  - Frontend: Run: cd frontend && npm install
+
+Problem: "Port already in use"
+Solution:
+  - Change port in backend/run.py (line 13)
+  - Or close other apps using port 8000
+
+═══════════════════════════════════════════════════════════════
+
+MANUAL START (if batch files don't work):
+═══════════════════════════════════════════════════════════════
+
+Backend:
+  cd backend
+  python -m venv venv
+  venv\Scripts\activate
+  pip install -r requirements.txt
+  python run.py
+
+Frontend:
+  cd frontend
+  npm install
+  npm start
+
+═══════════════════════════════════════════════════════════════
+
