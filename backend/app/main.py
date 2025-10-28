@@ -15,7 +15,11 @@ app = FastAPI(title="Placement Tracker API")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://lnmiit-placement-tracker-2026-1.onrender.com"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://lnmiit-placement-tracker-2026.onrender.com",
+        "https://lnmiit-placement-tracker-2026-1.onrender.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -268,4 +272,3 @@ def get_stats(db: Session = Depends(get_db)):
         "fte_count": fte_count,
         "intern_fte_count": intern_fte_count,
     }
-
