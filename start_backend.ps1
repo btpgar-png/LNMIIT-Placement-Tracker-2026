@@ -19,3 +19,4 @@ pip install -r requirements.txt
 Write-Host "Starting server..." -ForegroundColor Green
 python run.py
 
+

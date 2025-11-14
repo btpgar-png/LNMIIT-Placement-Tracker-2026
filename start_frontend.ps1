@@ -11,3 +11,4 @@ if (-Not (Test-Path "node_modules")) {
 Write-Host "Starting server..." -ForegroundColor Green
 npm start
 
+

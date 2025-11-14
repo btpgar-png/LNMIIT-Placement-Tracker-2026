@@ -68,3 +68,4 @@ The frontend will start at http://localhost:3000
 - Backend API docs: http://localhost:8000/docs (Swagger UI)
 - Check terminal output for error messages
 - Verify Node.js and Python are installed
+

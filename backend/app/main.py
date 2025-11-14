@@ -13,13 +13,24 @@ from app.config import settings
 app = FastAPI(title="Placement Tracker API")
 
 # CORS middleware
+# Allow GitHub Pages and other common deployment origins
+import os
+cors_origins = [
+    "http://localhost:3000",
+    "https://lnmiit-placement-tracker-2026.onrender.com",
+    "https://lnmiit-placement-tracker-2026-1.onrender.com",
+]
+
+# Add GitHub Pages origin if specified
+github_pages_url = os.getenv("GITHUB_PAGES_URL")
+if github_pages_url:
+    cors_origins.append(github_pages_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://lnmiit-placement-tracker-2026.onrender.com",
-        "https://lnmiit-placement-tracker-2026-1.onrender.com",
-    ],
+    allow_origins=cors_origins,
+    # Allow all GitHub Pages subdomains (https://username.github.io or custom domain)
+    allow_origin_regex=r"https://.*\.github\.io.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,6 +64,24 @@ def check_admin():
 def read_root():
     return {"message": "Placement Tracker API"}
 
+@app.get("/api/debug/db-info")
+def get_db_info():
+    """Debug endpoint to check database location"""
+    from app.database import DATABASE_URL, DB_FILE
+    import os
+    db_exists = DB_FILE.exists() if DB_FILE else False
+    db_size = DB_FILE.stat().st_size if (DB_FILE and DB_FILE.exists()) else 0
+    db_type = "PostgreSQL/External" if (DB_FILE is None or "postgresql" in DATABASE_URL.lower()) else "SQLite"
+    return {
+        "database_type": db_type,
+        "database_url": DATABASE_URL,
+        "database_file": str(DB_FILE) if DB_FILE else "Using external database (PostgreSQL, etc.)",
+        "database_exists": db_exists,
+        "database_size_bytes": db_size,
+        "current_working_directory": os.getcwd(),
+        "is_cloud_environment": any(os.path.exists(p) for p in ["/opt/render/project/src", "/app"]),
+    }
+
 @app.get("/api/companies", response_model=List[CompanySchema])
 def get_companies(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)):
     companies = db.query(Company).offset(skip).limit(limit).all()
@@ -67,35 +96,51 @@ def get_company(company_id: int, db: Session = Depends(get_db)):
 
 @app.post("/api/companies", response_model=CompanySchema, dependencies=[Depends(admin_required)])
 def create_company(company: CompanyCreate, db: Session = Depends(get_db)):
-    db_company = Company(**company.dict())
-    db.add(db_company)
-    db.commit()
-    db.refresh(db_company)
-    return db_company
+    try:
+        db_company = Company(**company.dict())
+        db.add(db_company)
+        db.commit()
+        db.refresh(db_company)
+        return db_company
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating company: {str(e)}")
 
 @app.put("/api/companies/{company_id}", response_model=CompanySchema, dependencies=[Depends(admin_required)])
 def update_company(company_id: int, company: CompanyUpdate, db: Session = Depends(get_db)):
-    db_company = db.query(Company).filter(Company.id == company_id).first()
-    if not db_company:
-        raise HTTPException(status_code=404, detail="Company not found")
-    
-    update_data = company.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_company, field, value)
-    
-    db.commit()
-    db.refresh(db_company)
-    return db_company
+    try:
+        db_company = db.query(Company).filter(Company.id == company_id).first()
+        if not db_company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        update_data = company.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(db_company, field, value)
+        
+        db.commit()
+        db.refresh(db_company)
+        return db_company
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating company: {str(e)}")
 
 @app.delete("/api/companies/{company_id}", dependencies=[Depends(admin_required)])
 def delete_company(company_id: int, db: Session = Depends(get_db)):
-    db_company = db.query(Company).filter(Company.id == company_id).first()
-    if not db_company:
-        raise HTTPException(status_code=404, detail="Company not found")
-    
-    db.delete(db_company)
-    db.commit()
-    return {"message": "Company deleted successfully"}
+    try:
+        db_company = db.query(Company).filter(Company.id == company_id).first()
+        if not db_company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        db.delete(db_company)
+        db.commit()
+        return {"message": "Company deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting company: {str(e)}")
 
 def extract_ctc_value(text: str) -> float | None:
     """Extract CTC value from text like 'CTC: ₹12,50,000' or 'Fixed - 1150000'"""

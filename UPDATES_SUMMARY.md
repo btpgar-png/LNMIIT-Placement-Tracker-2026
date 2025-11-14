@@ -56,3 +56,7 @@ Added a dropdown filter that shows companies/students with CTC above:
 4. Try the new CTC filter dropdown!
 
 The app now correctly parses CTC values with or without the ₹ symbol.
+
+
+
+

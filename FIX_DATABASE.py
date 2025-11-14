@@ -61,3 +61,7 @@ db.commit()
 print(f"✓ Added {len(companies)} companies to database!")
 print("✓ Database fixed! Now run: python run.py")
 
+
+
+
+
