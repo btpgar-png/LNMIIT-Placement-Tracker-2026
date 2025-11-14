@@ -1,15 +1,6 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app.models import Company, Base
+from app.models import Company
+from app.database import SessionLocal
 from datetime import datetime, date
-
-# Database connection
-DATABASE_URL = "sqlite:///./placement_tracker.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create tables
-Base.metadata.create_all(bind=engine)
 
 # Sample data
 sample_data = [
@@ -62,6 +53,9 @@ def seed_database():
             # Convert date string to date object
             if isinstance(company_data['notification_date'], str):
                 company_data['notification_date'] = datetime.strptime(company_data['notification_date'], '%Y-%m-%d').date()
+            # Ensure process field is set (default to "Completed")
+            if 'process' not in company_data:
+                company_data['process'] = "Completed"
             company = Company(**company_data)
             db.add(company)
         
@@ -76,5 +70,8 @@ def seed_database():
         db.close()
 
 if __name__ == "__main__":
+    # Initialize database first if running standalone
+    from app.database import init_db
+    init_db()
     seed_database()
 

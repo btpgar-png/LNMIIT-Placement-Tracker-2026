@@ -39,6 +39,13 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    # Seed database if empty (important for fresh deployments)
+    try:
+        from app.seed import seed_database
+        seed_database()
+    except Exception as e:
+        # Don't fail startup if seeding fails, but log it
+        print(f"Warning: Could not seed database on startup: {e}")
 
 
 # Authorization dependency: require admin token for write operations
