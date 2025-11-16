@@ -39,21 +39,27 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     init_db()
-    # Only seed database if explicitly enabled via environment variable
-    # This prevents overwriting manually added companies
-    # Set AUTO_SEED=true in Render environment variables to enable auto-seeding
-    auto_seed = os.getenv("AUTO_SEED", "false").lower() == "true"
-    
-    if auto_seed:
+    # Seed database if empty (for fresh deployments)
+    # This won't overwrite existing data - seed_database() checks if data exists
+    try:
+        from app.seed import seed_database
+        # Check if database is empty first
+        from app.database import SessionLocal
+        db = SessionLocal()
         try:
-            from app.seed import seed_database
-            seed_database()
-        except Exception as e:
-            # Don't fail startup if seeding fails, but log it
-            print(f"Warning: Could not seed database on startup: {e}")
-    else:
-        print("Auto-seeding disabled. Database will not be seeded automatically.")
-        print("To enable: Set AUTO_SEED=true in environment variables")
+            count = db.query(Company).count()
+            if count == 0:
+                print("Database is empty. Seeding with initial data...")
+                seed_database()
+            else:
+                print(f"Database already contains {count} companies. Skipping seed.")
+        finally:
+            db.close()
+    except Exception as e:
+        # Don't fail startup if seeding fails, but log it
+        print(f"Warning: Could not seed database on startup: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 # Authorization dependency: require admin token for write operations
