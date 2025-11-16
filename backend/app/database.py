@@ -14,10 +14,11 @@ load_dotenv()
 # Check if we're in a cloud environment (Render, Railway, etc.)
 # Render provides /opt/render/project/src as persistent storage
 # Also check for other common cloud paths
+# IMPORTANT: /tmp is NOT persistent on Render - avoid it!
 CLOUD_PATHS = [
-    "/opt/render/project/src",  # Render
-    "/app",  # Docker/Render default
-    "/tmp",  # Fallback (not ideal but works)
+    "/opt/render/project/src",  # Render persistent storage (RECOMMENDED)
+    "/app",  # Docker/Render default (may be persistent)
+    # /tmp is NOT included - it gets wiped on restarts!
 ]
 
 def get_persistent_storage_path():
@@ -62,6 +63,15 @@ def init_db():
     # Ensure database directory exists (important for cloud deployments)
     if DB_FILE and DB_FILE.parent:
         DB_FILE.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Log database location for debugging
+    if DB_FILE:
+        print(f"📁 Database location: {DB_FILE.absolute()}")
+        print(f"📁 Database exists: {DB_FILE.exists()}")
+        if DB_FILE.exists():
+            print(f"📁 Database size: {DB_FILE.stat().st_size} bytes")
+    else:
+        print(f"📁 Using external database: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'configured via DATABASE_URL'}")
     
     Base.metadata.create_all(bind=engine)
     # Lightweight migration: add 'process' column if missing
